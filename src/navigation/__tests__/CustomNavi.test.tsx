@@ -40,6 +40,10 @@ const makeProps = (activeIndex = 0) => ({
 });
 
 describe('CustomNavi accessibility', () => {
+  beforeEach(() => {
+    (Haptics.impactAsync as jest.Mock).mockClear();
+  });
+
   it('renders 4 elements with role tab', () => {
     const { getAllByRole } = render(<CustomNavi {...makeProps()} />);
     expect(getAllByRole('tab')).toHaveLength(4);
@@ -72,7 +76,6 @@ describe('CustomNavi accessibility', () => {
   });
 
   it('skips haptics when reduce motion is enabled', async () => {
-    (Haptics.impactAsync as jest.Mock).mockClear();
     (AccessibilityInfo.isReduceMotionEnabled as jest.Mock).mockResolvedValue(true);
     const { getAllByRole } = render(<CustomNavi {...makeProps()} />);
     fireEvent.press(getAllByRole('tab')[1]);
