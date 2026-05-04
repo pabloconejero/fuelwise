@@ -45,7 +45,7 @@ export default function CustomNavi({ state, navigation }: BottomTabBarProps) {
             onPress={() => handleTabChange(route)}
             accessibilityRole="tab"
             accessibilityState={{ selected: isFocused }}
-            accessibilityLabel={LABELS[route.name]}
+            accessibilityLabel={LABELS[route.name] ?? route.name}
           >
             {Icon && <Icon color={color} size={28} />}
           </TouchableOpacity>
