@@ -19,10 +19,14 @@ const LABELS: Record<string, string> = {
 
 export default function CustomNavi({ state, navigation }: BottomTabBarProps) {
 
-  const handleTabChange = async (route: any) => {
+  const handleTabChange = async (route: (typeof state.routes)[number]) => {
     const reduceMotion = await AccessibilityInfo.isReduceMotionEnabled();
     if (!reduceMotion) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      try {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+      } catch {
+        // haptics unavailable — continue silently
+      }
     }
     navigation.navigate(route.name);
   };
@@ -68,11 +72,4 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
   },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 },
-  label: { fontSize: 10 },
-  activeDot: {
-    height: 5,
-    width: 5,
-    borderRadius: 10,
-    backgroundColor: 'red',
-  },
 });
