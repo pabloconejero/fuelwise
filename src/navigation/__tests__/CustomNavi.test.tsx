@@ -1,17 +1,26 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import * as Haptics from 'expo-haptics';
 import CustomNavi from '../CustomNavi';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const AccessibilityInfo = require('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo') as {
+  isReduceMotionEnabled: jest.Mock;
+};
 
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(),
   ImpactFeedbackStyle: { Soft: 'Soft' },
 }));
 
-jest.mock('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo', () => ({
-  isReduceMotionEnabled: jest.fn().mockResolvedValue(false),
-  addEventListener: jest.fn(() => ({ remove: jest.fn() })),
-  fetch: jest.fn().mockResolvedValue(false),
-}));
+jest.mock('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo', () => {
+  const mock = {
+    isReduceMotionEnabled: jest.fn().mockResolvedValue(false),
+    addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+    fetch: jest.fn().mockResolvedValue(false),
+  };
+  return { ...mock, default: mock };
+});
 
 const mockNavigation = { navigate: jest.fn(), emit: jest.fn() } as any;
 
@@ -51,5 +60,24 @@ describe('CustomNavi accessibility', () => {
     expect(tabs[1]).toHaveAccessibilityState({ selected: true });
     expect(tabs[2]).not.toHaveAccessibilityState({ selected: true });
     expect(tabs[3]).not.toHaveAccessibilityState({ selected: true });
+  });
+
+  it('fires haptics when reduce motion is disabled', async () => {
+    (AccessibilityInfo.isReduceMotionEnabled as jest.Mock).mockResolvedValue(false);
+    const { getAllByRole } = render(<CustomNavi {...makeProps()} />);
+    fireEvent.press(getAllByRole('tab')[1]);
+    await waitFor(() => {
+      expect(Haptics.impactAsync).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Soft);
+    });
+  });
+
+  it('skips haptics when reduce motion is enabled', async () => {
+    (Haptics.impactAsync as jest.Mock).mockClear();
+    (AccessibilityInfo.isReduceMotionEnabled as jest.Mock).mockResolvedValue(true);
+    const { getAllByRole } = render(<CustomNavi {...makeProps()} />);
+    fireEvent.press(getAllByRole('tab')[1]);
+    await waitFor(() => {
+      expect(Haptics.impactAsync).not.toHaveBeenCalled();
+    });
   });
 });
